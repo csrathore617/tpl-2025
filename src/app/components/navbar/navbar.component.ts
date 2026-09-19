@@ -20,7 +20,7 @@ import { Subscription } from 'rxjs';
           </div>
         </a>
 
-        <button class="hamburger" (click)="menuOpen = !menuOpen" [class.open]="menuOpen">
+        <button type="button" class="hamburger" (click)="toggleMenu($event)" [class.open]="menuOpen" [attr.aria-expanded]="menuOpen" aria-label="Toggle navigation menu">
           <span></span><span></span><span></span>
         </button>
 
@@ -61,12 +61,12 @@ import { Subscription } from 'rxjs';
     .brand-name { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--primary); line-height: 1; }
     .brand-sub { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
     .nav-links { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
-    .hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; z-index: 10; }
+    .hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 8px; z-index: 501; }
     .hamburger span { display: block; width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.3s; }
     @media (max-width: 1024px) {
       .hamburger { display: flex; }
-      .nav-links { display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; background: var(--bg-card); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem; gap: 4px; align-items: flex-start; overflow-y: auto; z-index: 499; }
-      .nav-links.open { display: flex; }
+      .nav-links { display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; background: var(--bg-card); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem; gap: 4px; align-items: flex-start; overflow-y: auto; z-index: 500; }
+      .nav-links.open { display: flex; visibility: visible; opacity: 1; }
       .nav-link { width: 100%; padding: 10px 16px; font-size: 1rem; }
     }
   `]
@@ -84,6 +84,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
       if (event === 'AUCTION_STATE') this.isLive = data.state === 'LIVE';
       if (['PLAYER_SOLD','PLAYER_UNSOLD','AUCTION_COMPLETED'].includes(event)) this.isLive = false;
     });
+  }
+
+  toggleMenu(event: Event) {
+    event.stopPropagation();
+    this.menuOpen = !this.menuOpen;
   }
 
   logout() { this.auth.logout(); }
