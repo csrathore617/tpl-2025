@@ -54,7 +54,7 @@ import { Subscription } from 'rxjs';
     </nav>
   `,
   styles: [`
-    .navbar { background: rgba(10,15,30,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 500; }
+    .navbar { background: rgba(10,15,30,0.97); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 500; }
     .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
     .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .brand-icon { font-size: 1.8rem; }
@@ -65,9 +65,9 @@ import { Subscription } from 'rxjs';
     .hamburger span { display: block; width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.3s; }
     @media (max-width: 1024px) {
       .hamburger { display: flex; }
-      .nav-links { display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; background: var(--bg-card); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem; gap: 4px; align-items: flex-start; overflow-y: auto; z-index: 500; }
-      .nav-links.open { display: flex; visibility: visible; opacity: 1; }
-      .nav-link { width: 100%; padding: 10px 16px; font-size: 1rem; }
+      .nav-links { display: flex !important; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; background: var(--bg-card); border-bottom: 1px solid var(--border); flex-direction: column; padding: 1rem; gap: 4px; align-items: stretch; overflow-y: auto; z-index: 500; transform: translateX(100%); visibility: hidden; opacity: 0; pointer-events: none; transition: transform 0.2s ease, opacity 0.2s ease, visibility 0.2s ease; }
+      .nav-links.open { transform: translateX(0); visibility: visible; opacity: 1; pointer-events: auto; }
+      .nav-link { display: block; width: 100%; padding: 10px 16px; font-size: 1rem; color: var(--text); }
     }
   `]
 })
