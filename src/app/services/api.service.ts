@@ -3,7 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Player, Team, AuctionRecord, Bid, Announcement, Settings, AuctionState, Stats, Season, GalleryItem, TournamentSettings } from '../types/models';
 
-const API = 'https://tpl-2025.onrender.com/api';
+const BACKEND_URL = 'https://tpl-2025.onrender.com';
+const API = `${BACKEND_URL}/api`;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -105,6 +106,6 @@ export class ApiService {
   getImageUrl(path: string): string {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    return `https://tpl-2025.onrender.com${path}`;
+    return `${BACKEND_URL}${path}`;
   }
 }

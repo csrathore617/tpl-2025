@@ -27,7 +27,7 @@ const readline = require('readline');
 
 const CLIENT_ID = process.env.OAUTH_CLIENT_ID || 'PASTE_YOUR_CLIENT_ID_HERE';
 const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET || 'PASTE_YOUR_CLIENT_SECRET_HERE';
-const REDIRECT_URI = 'https://tpl-2025.onrender.com/oauth2callback';
+const REDIRECT_URI = 'http://localhost:3000/oauth2callback';
 
 if (CLIENT_ID.includes('PASTE_') || CLIENT_SECRET.includes('PASTE_')) {
   console.error('Edit get-refresh-token.js and set CLIENT_ID / CLIENT_SECRET first (or pass as env vars).');

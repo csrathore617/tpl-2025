@@ -25,37 +25,12 @@ const ADMIN_PASS_HASH = bcrypt.hashSync(process.env.ADMIN_PASS || 'tpl2026admin'
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4200';
 
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-const GALLERY_DIR = path.join(UPLOADS_DIR, 'gallery');
-const SEASONS_DIR = path.join(UPLOADS_DIR, 'seasons');
-['gallery/season1','gallery/season2','gallery/season3','gallery/general','seasons'].forEach(d => {
-  const p = path.join(UPLOADS_DIR, d);
-  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
-});
-
-const storage = multer.diskStorage({
-  destination: UPLOADS_DIR,
-  filename: (req, file, cb) => cb(null, uuidv4() + path.extname(file.originalname))
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 const ALLOWED_IMG = ['.jpg','.jpeg','.png','.webp'];
-const galleryStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const seasonId = (req.body.season_id || 'general').toLowerCase().replace(/[^a-z0-9]/g,'');
-    const subDir = seasonId === 'general' ? 'general' : seasonId;
-    const dest = path.join(GALLERY_DIR, subDir);
-    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-    cb(null, dest);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (!ALLOWED_IMG.includes(ext)) return cb(new Error('Invalid image type'));
-    cb(null, uuidv4() + ext);
-  }
-});
 const galleryUpload = multer({
-  storage: galleryStorage,
+  storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -63,31 +38,26 @@ const galleryUpload = multer({
   }
 });
 
-const seasonImgStorage = multer.diskStorage({
-  destination: SEASONS_DIR,
-  filename: (req, file, cb) => cb(null, uuidv4() + path.extname(file.originalname).toLowerCase())
+const seasonUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, ALLOWED_IMG.includes(ext));
+  }
 });
-const seasonUpload = multer({ storage: seasonImgStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 app.use(cors({ origin: [FRONTEND_URL, 'http://localhost:4200'], credentials: true }));
 app.use(express.json());
-app.use('/uploads', express.static(UPLOADS_DIR));
 
 // ---- Shared image upload helper ----
-// Always saves to local /uploads first (multer), then if Drive enabled,
-// uploads to Drive and returns the Drive URL. Local file kept as fallback.
 async function uploadImageIfDrive(file) {
   if (!file) return '';
-  const localPath = `/uploads/${path.relative(UPLOADS_DIR, file.path).replace(/\\/g, '/')}`;
-  if (!driveService.DRIVE_ENABLED) return localPath;
-  try {
-    const buf = fs.readFileSync(file.path);
-    const driveFile = await driveService.uploadImageToDrive(buf, file.filename, file.mimetype);
-    if (driveFile && driveFile.id) return driveService.getDriveImageUrl(driveFile.id);
-  } catch (e) {
-    console.error('Drive image upload failed, using local path:', e.message);
-  }
-  return localPath;
+  if (!driveService.DRIVE_ENABLED) throw new Error('Google Drive is not configured; local image storage is disabled');
+  const filename = `${uuidv4()}${path.extname(file.originalname).toLowerCase()}`;
+  const driveFile = await driveService.uploadImageToDrive(file.buffer, filename, file.mimetype);
+  if (!driveFile || !driveFile.id) throw new Error('Google Drive did not return an image ID');
+  return driveService.getDriveImageUrl(driveFile.id);
 }
 
 // ---- Auth middleware ----
@@ -665,49 +635,37 @@ app.get('/api/admin/drive-status', authAdmin, (req, res) => {
 
 // ---- Backup & Data ----
 app.get('/api/admin/backup/excel', authAdmin, async (req, res) => {
+  let tmpPath;
   try {
-    const DATA_FILE = require('path').join(__dirname, 'data', 'tpl2026.xlsx');
-    if (!require('fs').existsSync(DATA_FILE)) return res.status(404).json({ error: 'Excel file not found' });
-    res.download(DATA_FILE, 'tpl2026.xlsx');
+    if (!driveService.DRIVE_ENABLED) return res.status(503).json({ error: 'Google Drive is not configured' });
+    tmpPath = await driveService.downloadExcelToTemp();
+    res.download(tmpPath, 'tpl2026.xlsx', () => {
+      if (tmpPath && fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/admin/backup/images', authAdmin, async (req, res) => {
   try {
-    if (driveService.DRIVE_ENABLED) {
-      const files = await driveService.listDriveImages();
-      res.json(files.map(f => ({ id: f.id, name: f.name, mimeType: f.mimeType, size: f.size, createdTime: f.createdTime, url: driveService.getDriveImageUrl(f.id) })));
-    } else {
-      // List local uploads
-      const uploadsDir = path.join(__dirname, 'uploads');
-      const files = [];
-      function walk(dir, base) {
-        if (!fs.existsSync(dir)) return;
-        fs.readdirSync(dir).forEach(f => {
-          const full = path.join(dir, f);
-          const rel = path.join(base, f);
-          if (fs.statSync(full).isDirectory()) walk(full, rel);
-          else files.push({ name: rel, url: '/uploads/' + rel.replace(/\\/g, '/'), size: fs.statSync(full).size });
-        });
-      }
-      walk(uploadsDir, '');
-      res.json(files);
-    }
+    if (!driveService.DRIVE_ENABLED) return res.status(503).json({ error: 'Google Drive is not configured' });
+    const files = await driveService.listDriveImages();
+    res.json(files.map(f => ({ id: f.id, name: f.name, mimeType: f.mimeType, size: f.size, createdTime: f.createdTime, url: driveService.getDriveImageUrl(f.id) })));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/admin/backup/download', authAdmin, async (req, res) => {
+  let excelPath;
   try {
-    const DATA_FILE = path.join(__dirname, 'data', 'tpl2026.xlsx');
+    if (!driveService.DRIVE_ENABLED) return res.status(503).json({ error: 'Google Drive is not configured' });
+    excelPath = await driveService.downloadExcelToTemp();
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="TPL2026-Backup-${new Date().toISOString().slice(0,10)}.zip"`);
     const archive = archiver('zip', { zlib: { level: 6 } });
     archive.on('error', e => { console.error('Archive error:', e); });
     archive.pipe(res);
-    if (fs.existsSync(DATA_FILE)) archive.file(DATA_FILE, { name: 'tpl2026.xlsx' });
-    const uploadsDir = path.join(__dirname, 'uploads');
-    if (fs.existsSync(uploadsDir)) archive.directory(uploadsDir, 'uploads');
+    if (excelPath && fs.existsSync(excelPath)) archive.file(excelPath, { name: 'tpl2026.xlsx' });
     await archive.finalize();
+    if (excelPath && fs.existsSync(excelPath)) fs.unlinkSync(excelPath);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

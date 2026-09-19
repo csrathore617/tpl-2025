@@ -56,7 +56,7 @@ A complete full-stack cricket tournament management platform with live auction, 
 cd server
 npm install
 node index.js
-# Server runs on https://tpl-2025.onrender.com
+# Server runs on http://localhost:3000
 ```
 
 ### 2. Start the Frontend

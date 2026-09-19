@@ -1,9 +1,11 @@
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const drive = require('./drive.service');
 
-const DATA_FILE = path.join(__dirname, 'data', 'tpl2026.xlsx');
+// Drive is the source of truth. This temporary file is only a parser/upload staging area.
+const DATA_FILE = path.join(os.tmpdir(), 'tpl2026.xlsx');
 
 const SHEETS = {
   PLAYERS: 'Players',
@@ -195,16 +197,15 @@ function createWorkbook() {
 }
 
 async function saveWorkbook(wb) {
+  if (!drive.DRIVE_ENABLED) throw new Error('Google Drive is not configured; local Excel storage is disabled');
   ensureDataDir();
   XLSX.writeFile(wb, DATA_FILE);
-  if (drive.DRIVE_ENABLED) {
-    await drive.uploadExcelToDrive(DATA_FILE).catch(e => console.error('Drive sync error:', e.message));
-  }
+  await drive.uploadExcelToDrive(DATA_FILE);
 }
 
 // Pull latest from Drive on startup if enabled
 async function syncFromDrive() {
-  if (!drive.DRIVE_ENABLED) return;
+  if (!drive.DRIVE_ENABLED) throw new Error('Google Drive is not configured; local Excel fallback is disabled');
   try {
     const tmpPath = await drive.downloadExcelToTemp();
     if (tmpPath) {
@@ -225,12 +226,11 @@ async function syncFromDrive() {
         }
       }
       if (lastErr) throw lastErr;
-      fs.unlinkSync(tmpPath);
+      if (tmpPath !== DATA_FILE && fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
       console.log('Synced Excel from Google Drive');
     }
   } catch (e) {
-    console.error('Drive sync on startup failed (using local):', e.message);
-    console.error('Tip: close tpl2026.xlsx if it is open in Excel, and/or move this project out of your OneDrive folder to avoid file locks.');
+    throw new Error(`Drive startup sync failed; local Excel fallback is disabled: ${e.message}`);
   }
 }
 

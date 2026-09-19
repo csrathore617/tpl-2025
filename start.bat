@@ -8,7 +8,7 @@ cd /d %~dp0
 start "TPL2026 Frontend" cmd /k "npx ng serve --open"
 echo.
 echo TPL2026 is starting up!
-echo Backend:  https://tpl-2025.onrender.com
+echo Backend:  http://localhost:3000
 echo Frontend: http://localhost:4200
 echo.
 echo Admin Login: admin / tpl2026admin

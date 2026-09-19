@@ -25,7 +25,7 @@ import { Season } from '../../../types/models';
               <h3 style="font-size:1.1rem">{{ s.season_name }}</h3>
               <div style="color:var(--text-muted);font-size:0.8rem">{{ s.year }}</div>
             </div>
-            <span class="badge badge-{{ s.status?.toLowerCase() }}">{{ s.status }}</span>
+            <span class="badge badge-{{ s.status.toLowerCase() }}">{{ s.status }}</span>
           </div>
           <div style="font-size:0.88rem;margin-bottom:0.5rem"><strong style="color:var(--accent)">🏆 {{ s.champion_team }}</strong></div>
           <div style="font-size:0.82rem;color:var(--text-muted)" *ngIf="s.captain">👑 {{ s.captain }}</div>
