@@ -8,7 +8,9 @@ export class SocketService {
   events$ = new Subject<{ event: string; data: any }>();
 
   constructor() {
-    this.socket = io('https://tpl-2025.onrender.com', { autoConnect: true });
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const backendUrl = isLocal ? 'http://localhost:3000' : 'https://tpl-2025.onrender.com';
+    this.socket = io(backendUrl, { autoConnect: true });
     const events = ['AUCTION_STATE','AUCTION_STARTED','PLAYER_SELECTED','RANDOM_PLAYER_SELECTED',
       'BID_PLACED','TIMER_UPDATED','PLAYER_SOLD','PLAYER_UNSOLD','AUCTION_PAUSED',
       'AUCTION_RESUMED','AUCTION_COMPLETED','TEAM_PURSE_UPDATED','ANNOUNCEMENT_UPDATED'];

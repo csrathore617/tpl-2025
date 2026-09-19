@@ -70,6 +70,26 @@ function loadWorkbook() {
 function migrateWorkbook(wb) {
   let changed = false;
 
+  // Player profile URLs depend on unique IDs. Repair duplicate or missing IDs once.
+  if (wb.Sheets[SHEETS.PLAYERS]) {
+    const players = sheetToJson(wb, SHEETS.PLAYERS);
+    const usedIds = new Set();
+    let nextId = 1;
+    players.forEach(player => {
+      let playerId = String(player.player_id || '').trim();
+      if (!playerId || usedIds.has(playerId)) {
+        do {
+          playerId = `TPL26-P${String(nextId).padStart(3, '0')}`;
+          nextId++;
+        } while (usedIds.has(playerId));
+        player.player_id = playerId;
+        changed = true;
+      }
+      usedIds.add(playerId);
+    });
+    if (changed) wb.Sheets[SHEETS.PLAYERS] = jsonToSheet(players, PLAYER_HEADERS);
+  }
+
   if (!wb.Sheets[SHEETS.SEASONS]) {
     const seasonHeaders = [['season_id','season_number','season_name','year','champion_team','champion_logo','champion_image','captain','man_of_series','runner_up','final_description','final_score','venue','status','display_order','created_at','updated_at']];
     const now = new Date().toISOString();
@@ -261,11 +281,25 @@ async function getPlayerById(id) {
   return players.find(p => p.player_id === id) || null;
 }
 
+function nextPlayerId(players) {
+  const usedIds = new Set(players.map(player => String(player.player_id || '').trim()));
+  let number = 1;
+  let playerId;
+  do {
+    playerId = `TPL26-P${String(number).padStart(3, '0')}`;
+    number++;
+  } while (usedIds.has(playerId));
+  return playerId;
+}
+
 async function savePlayer(player) {
   await acquireLock();
   try {
     const wb = loadWorkbook();
     const players = sheetToJson(wb, SHEETS.PLAYERS);
+    if (!player.player_id || players.some(existing => existing.player_id === player.player_id)) {
+      player.player_id = nextPlayerId(players);
+    }
     players.push(player);
     wb.Sheets[SHEETS.PLAYERS] = jsonToSheet(players, PLAYER_HEADERS);
     await saveWorkbook(wb);

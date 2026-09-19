@@ -3,7 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Player, Team, AuctionRecord, Bid, Announcement, Settings, AuctionState, Stats, Season, GalleryItem, TournamentSettings } from '../types/models';
 
-const BACKEND_URL = 'https://tpl-2025.onrender.com';
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const BACKEND_URL = isLocal ? 'http://localhost:3000' : 'https://tpl-2025.onrender.com';
 const API = `${BACKEND_URL}/api`;
 
 @Injectable({ providedIn: 'root' })

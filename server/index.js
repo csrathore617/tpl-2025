@@ -29,6 +29,7 @@ const allowedOrigins = FRONTEND_URL.split(',').map(origin => origin.trim()).filt
 function isAllowedOrigin(origin) {
   if (!origin) return true;
   if (allowedOrigins.includes(origin)) return true;
+  if (['http://localhost:4200', 'http://127.0.0.1:4200'].includes(origin)) return true;
   return /^https:\/\/[a-z0-9-]+\.netlify\.app$/i.test(origin);
 }
 
@@ -143,13 +144,11 @@ app.post('/api/players/register', upload.single('photo'), async (req, res) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email' });
     if (players.find(p => p.mobile === mobile)) return res.status(400).json({ error: 'Player with this mobile already registered' });
 
-    const count = players.length + 1;
-    const player_id = `TPL26-P${String(count).padStart(3, '0')}`;
     const photo = await uploadImageIfDrive(req.file);
     const age = dob ? Math.floor((new Date() - new Date(dob)) / (365.25 * 24 * 3600 * 1000)) : '';
 
     const player = {
-      player_id, name, photo, dob: dob || '', age, mobile, email,
+      player_id: '', name, photo, dob: dob || '', age, mobile, email,
       city: city || '', address: address || '', role,
       batting_style: batting_style || '', bowling_style: bowling_style || '',
       experience: experience || '', preferred_position: preferred_position || '',
@@ -157,9 +156,9 @@ app.post('/api/players/register', upload.single('photo'), async (req, res) => {
       registration_date: new Date().toISOString(), status: 'REGISTERED',
       team_id: '', final_bid: ''
     };
-    await excel.savePlayer(player);
-    await excel.saveAudit({ audit_id: uuidv4(), action: 'PLAYER_REGISTERED', entity: 'Player', entity_id: player_id, prev_value: '', new_value: 'REGISTERED', created_at: new Date().toISOString(), admin: 'public' });
-    res.status(201).json({ message: 'Registration successful', player_id });
+    const savedPlayer = await excel.savePlayer(player);
+    await excel.saveAudit({ audit_id: uuidv4(), action: 'PLAYER_REGISTERED', entity: 'Player', entity_id: savedPlayer.player_id, prev_value: '', new_value: 'REGISTERED', created_at: new Date().toISOString(), admin: 'public' });
+    res.status(201).json({ message: 'Registration successful', player_id: savedPlayer.player_id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
