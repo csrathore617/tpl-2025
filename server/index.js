@@ -24,6 +24,13 @@ const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS_HASH = bcrypt.hashSync(process.env.ADMIN_PASS || 'tpl2026admin', 10);
 const PORT = process.env.PORT || 3000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4200';
+const allowedOrigins = FRONTEND_URL.split(',').map(origin => origin.trim()).filter(Boolean);
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  return /^https:\/\/[a-z0-9-]+\.netlify\.app$/i.test(origin);
+}
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
@@ -47,7 +54,9 @@ const seasonUpload = multer({
   }
 });
 
-app.use(cors({ origin: [FRONTEND_URL, 'http://localhost:4200'], credentials: true }));
+app.use(cors({ origin: (origin, callback) => {
+  callback(null, isAllowedOrigin(origin));
+}, credentials: true }));
 app.use(express.json());
 
 // ---- Shared image upload helper ----
