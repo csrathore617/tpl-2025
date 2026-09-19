@@ -45,11 +45,11 @@ import { TournamentSettings } from '../../../types/models';
         <div class="grid grid-2">
           <div class="form-group">
             <label class="form-label">Phone Number</label>
-            <input class="form-control" [(ngModel)]="form.phone" placeholder="+91 98765 43210">
+            <input class="form-control" [(ngModel)]="form.phone" placeholder="+91 8000632162">
           </div>
           <div class="form-group">
             <label class="form-label">WhatsApp Number</label>
-            <input class="form-control" [(ngModel)]="form.whatsapp" placeholder="+91 98765 43210">
+            <input class="form-control" [(ngModel)]="form.whatsapp" placeholder="+91 8000632162">
           </div>
           <div class="form-group">
             <label class="form-label">Phone Available Hours</label>

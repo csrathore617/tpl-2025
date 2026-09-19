@@ -111,9 +111,9 @@ function migrateWorkbook(wb) {
       ['venue_name','Thebri Cricket Ground, Thebri',now],
       ['venue_address','Thebri Cricket Stadium, Thebri',now],
       ['opening_time','7:00 AM',now],['closing_time','7:00 PM',now],
-      ['phone','+91 98765 43210',now],['whatsapp','+91 98765 43210',now],
+      ['phone','+91 8000632162',now],['whatsapp','+91 8000632162',now],
       ['phone_available','9:00 AM - 6:00 PM',now],
-      ['primary_email','info@tpl2025.com',now],['support_email','support@tpl2025.com',now],
+      ['primary_email','info@tpl2026.com',now],['support_email','support@tpl2026.com',now],
       ['response_time','Within 24 hours',now],['maps_url','',now]
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tsData), SHEETS.TSETTINGS);
@@ -178,11 +178,11 @@ function createWorkbook() {
     ['venue_address','Thebri Cricket Stadium, Thebri',new Date().toISOString()],
     ['opening_time','7:00 AM',new Date().toISOString()],
     ['closing_time','7:00 PM',new Date().toISOString()],
-    ['phone','+91 98765 43210',new Date().toISOString()],
-    ['whatsapp','+91 98765 43210',new Date().toISOString()],
+    ['phone','+91 8000632162',new Date().toISOString()],
+    ['whatsapp','+91 8000632162',new Date().toISOString()],
     ['phone_available','9:00 AM - 6:00 PM',new Date().toISOString()],
-    ['primary_email','info@tpl2025.com',new Date().toISOString()],
-    ['support_email','support@tpl2025.com',new Date().toISOString()],
+    ['primary_email','info@tpl2026.com',new Date().toISOString()],
+    ['support_email','support@tpl2026.com',new Date().toISOString()],
     ['response_time','Within 24 hours',new Date().toISOString()],
     ['maps_url','',new Date().toISOString()]
   ];

@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api.service';
 import { Player } from '../../types/models';
+import { switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-player-detail',
@@ -92,7 +93,15 @@ export class PlayerDetailComponent implements OnInit {
   constructor(private route: ActivatedRoute, public api: ApiService) {}
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id')!;
-    this.api.getPlayer(id).subscribe({ next: p => { this.player = p; this.loading = false; }, error: () => this.loading = false });
+    this.route.paramMap.pipe(
+      switchMap(params => {
+        this.player = null;
+        this.loading = true;
+        return this.api.getPlayer(params.get('id') || '');
+      })
+    ).subscribe({
+      next: p => { this.player = p; this.loading = false; },
+      error: () => { this.player = null; this.loading = false; }
+    });
   }
 }
